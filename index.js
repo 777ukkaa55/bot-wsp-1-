@@ -1,29 +1,28 @@
 /**
  * ====================================================================
- * 🚀 TWILIO WHATSAPP BOT (Node.js/Express)
- * Este código está optimizado para usar la infraestructura de Twilio.
+ * 🚀 TWILIO WHATSAPP BOT (Node.js/Express) - VERSIÓN FINAL Y ROBUSTA
  * ====================================================================
  */
 
 // 1. Módulos Esenciales
 const express = require("express");
-const MessagingResponse = require("twilio").twiml.MessagingResponse;
+// Importamos el constructor completo de twilio para evitar errores de referencia
+const twilio = require('twilio');
+const MessagingResponse = twilio.twiml.MessagingResponse;
 const bodyParser = require("body-parser");
 const app = express();
 
 // 2. Middleware para analizar solicitudes POST de Twilio
-// Twilio envía datos como 'application/x-www-form-urlencoded'
-app.use(bodyParser.urlencoded({ extended: false }));
+// AJUSTE CRÍTICO: Configuración robusta para manejar solicitudes POST de Twilio
+app.use(bodyParser.urlencoded({ extended: false, limit: '50mb' })); 
 
-// 3. Variables de Entorno (Se leen automáticamente de Render)
+// 3. Variables de Entorno
 const PORT = process.env.PORT || 3000;
-// NOTA: Para el Auth Token, Twilio lo lee directamente usando el módulo 'twilio'
-// pero es buena práctica tenerlas en las variables de Render.
+
 
 /**
  * ====================================================================
  * 📩 RUTA PRINCIPAL: WEBHOOK DE WHATSAPP
- * Soluciona el Error 404, implementando la ruta POST /whatsapp
  * ====================================================================
  */
 app.post("/whatsapp", (req, res) => {
@@ -39,19 +38,15 @@ app.post("/whatsapp", (req, res) => {
     console.log(`💬 CONTENIDO: "${incomingMessage}"`);
     console.log(`================================`);
 
-    // 3. Lógica simple de respuesta
-    let responseText = `¡Hola! Soy un bot Twilio. Recibí tu mensaje: "${incomingMessage}".`;
-
-    if (incomingMessage.toLowerCase().includes("ayuda")) {
-        responseText = "Para ayuda, puedes visitar twilio.com/docs";
-    }
+    // 3. Lógica de respuesta (Mensaje de confirmación final)
+    const responseText = `¡ÉXITO! Conexión Twilio-Render OK. Recibí: "${incomingMessage}"`;
 
     // 4. Agregar la respuesta al objeto TwiML
     twiml.message(responseText);
 
-    // 5. Enviar la respuesta a Twilio en formato XML (TwiML)
-    res.writeHead(200, { "Content-Type": "text/xml" });
-    res.end(twiml.toString());
+    // 5. ENVIAR RESPUESTA: Usamos res.set para forzar el Content-Type y solucionar el 502
+    res.set('Content-Type', 'text/xml');
+    res.status(200).end(twiml.toString());
 });
 
 /**
